@@ -12,6 +12,8 @@ const __dirname = path.dirname(__filename)
 export default defineConfig(() => ({
   base: './', // Use relative paths for assets
   plugins: [react()],
+  // Ensure Vite serves the SPA for all routes in development
+  appType: 'spa',
   server: {
     proxy: {
       '/api': {
