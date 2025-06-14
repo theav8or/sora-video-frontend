@@ -138,7 +138,7 @@ function App() {
 
   const checkJobStatus = async (jobId: string) => {
     try {
-      const response = await apiClient.get(`/job/${jobId}`);
+      const response = await apiClient.get(`/api/job/${jobId}`);
       const responseData = response.data;
 
       const { status, result, error, progress, openai_status, openai_response } = responseData;
@@ -228,7 +228,7 @@ function App() {
     setJob(initialJob);
 
     try {
-      const response = await apiClient.post('/generate', {
+      const response = await apiClient.post('/api/generate', {
         prompt: values.prompt,
         width: parseInt(values.resolution.split('x')[0]),
         height: parseInt(values.resolution.split('x')[1]),
