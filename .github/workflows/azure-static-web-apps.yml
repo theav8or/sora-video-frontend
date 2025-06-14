@@ -19,6 +19,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+          fetch-depth: 0  # Fetch all history for all branches and tags
           
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -29,47 +30,36 @@ jobs:
           
       - name: Install dependencies
         run: |
+          # Print versions for debugging
           node -v
           npm -v
-          npm ci --legacy-peer-deps
-          # Install Terser explicitly as it's needed for production builds
-          npm install --save-dev terser
-        
+          
+          # Install dependencies using npm install instead of ci to update lock file
+          npm install --legacy-peer-deps
+          
+          # Verify lock file is up to date
+          git status
+          
       - name: Build application
         run: |
+          # Build with production settings
           VITE_BASE_PATH=./ npm run build
           
-      - name: Configure Azure Static Web Apps
-        run: |
-          # Create necessary files in dist directory
-          cd dist
+          # Verify build output
+          ls -la dist/
           
-          # Create a fallback for SPA routing
-          cp index.html 404.html
-          
-          # Copy the staticwebapp.config.json from root to dist
-          cp ../staticwebapp.config.json .
-          
-          # Create a _redirects file for Netlify-style redirects
-          echo '/*    /index.html   200' > _redirects
-          
-          # List files for debugging
-          echo "=== Files in dist/ ==="
-          ls -la
-          
-          # Verify staticwebapp.config.json
-          echo "\n=== staticwebapp.config.json ==="
-          cat staticwebapp.config.json
-          
-      - name: Create build directory for Azure
+      - name: Prepare build directory
         run: |
           # Create build directory structure
-          mkdir -p build/assets
+          mkdir -p build
           
           # Copy only necessary files from dist
-          cp -r dist/index.html build/
-          cp dist/404.html build/ 2>/dev/null || true
-          cp -r dist/assets/* build/assets/ 2>/dev/null || true
+          cp -r dist/* build/
+          
+          # Ensure staticwebapp.config.json exists
+          if [ ! -f staticwebapp.config.json ]; then
+            echo '{"navigationFallback": {"rewrite": "/index.html","exclude": ["/assets/*","/*.css","/*.js","/*.json"]}}' > staticwebapp.config.json
+          fi
           
           # Copy configuration files
           cp staticwebapp.config.json build/
