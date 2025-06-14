@@ -131,12 +131,9 @@ function App() {
         
         // Update job state with proper type safety
         setJob((prev: VideoJob | null) => {
-          // Use the video_url from the result if available, otherwise construct it
-          const videoUrl = result?.video_url 
-            ? result.video_url
-            : result?.video_id 
-              ? `${window.location.origin}/api/v1/videos/${result.video_id}?t=${Date.now()}`
-              : undefined;
+          // Always use the video_url from the result if available
+          // This should be the direct SAS URL to the blob storage
+          const videoUrl = result?.video_url || undefined;
             
           if (!prev) {
             return {
@@ -378,9 +375,9 @@ function App() {
             
             <NumberInput
               label="Duration (seconds)"
-              description="Video duration in seconds (1-60)"
-              min={1}
-              max={60}
+              description={`Video duration in seconds (${MIN_VIDEO_DURATION}-${MAX_VIDEO_DURATION})`}
+              min={MIN_VIDEO_DURATION}
+              max={MAX_VIDEO_DURATION}
               {...form.getInputProps('duration')}
               disabled={isLoading}
               required
