@@ -44,15 +44,14 @@ const supportedResolutions = [
   { value: '480x854', label: '480x854 (9:16 Portrait)' },
   { value: '854x480', label: '854x480 (16:9)' },
   { value: '720x720', label: '720x720 (1:1)' },
-  { value: '1280x720', label: '1280x720 (16:9)' },
-  { value: '1080x1080', label: '1080x1080 (1:1)' },
+  { value: '1080x1080', label: '1080x1080 (1:1 Square)' },
   { value: '1080x1920', label: '1080x1920 (9:16 Portrait)' },
   { value: '1920x1080', label: '1920x1080 (16:9)' },
 ];
 
 // SORA video duration limits (in seconds)
 const MIN_VIDEO_DURATION = 1;
-const MAX_VIDEO_DURATION = 20;
+const MAX_VIDEO_DURATION = 10;
 
 interface FormValues {
   prompt: string;
@@ -74,7 +73,7 @@ function App() {
     initialValues: {
       prompt: '',
       duration: 5,
-      resolution: '1280x720',
+      resolution: '854x480',
     },
     validate: {
       prompt: (value) => (value.trim().length > 0 ? null : 'Prompt is required'),
@@ -132,9 +131,12 @@ function App() {
         
         // Update job state with proper type safety
         setJob((prev: VideoJob | null) => {
-          const videoUrl = result?.video_id 
-            ? `${window.location.origin}/api/video/${result.video_id}?t=${Date.now()}`
-            : undefined;
+          // Use the video_url from the result if available, otherwise construct it
+          const videoUrl = result?.video_url 
+            ? result.video_url
+            : result?.video_id 
+              ? `${window.location.origin}/api/v1/videos/${result.video_id}?t=${Date.now()}`
+              : undefined;
             
           if (!prev) {
             return {
