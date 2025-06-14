@@ -80,7 +80,6 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [statusEmoji, setStatusEmoji] = useState('⏳');
   const [showDownloadModal, setShowDownloadModal] = useState(false);
-  const [openAiStatus, setOpenAiStatus] = useState('');
   const pollingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const form = useForm<FormValues>({
@@ -148,9 +147,7 @@ function App() {
 
       const { status, result, error, progress, openai_status, openai_response } = responseData;
       
-      if (openai_status) {
-        setOpenAiStatus(`OpenAI Status: ${openai_status}`);
-      }
+      // openai_status is already included in the job state update below
       
       setJob((prev) => {
         if (!prev) return null;
@@ -173,7 +170,6 @@ function App() {
         }
         setIsLoading(false);
         setStatusEmoji('✅');
-        setOpenAiStatus('Video generation completed successfully!');
         setShowDownloadModal(true);
       } else if (status === 'failed') {
         if (pollingInterval.current) {
@@ -184,11 +180,9 @@ function App() {
         setStatusEmoji('❌');
         const errorMsg = error || 'Video generation failed';
         setError(errorMsg);
-        setOpenAiStatus(`Error: ${errorMsg}`);
       } else {
-        const progressMsg = progress ? ` (${progress}%)` : '';
+        // Status updates are handled by the state updates
         setStatusEmoji('⚙️');
-        setOpenAiStatus(openai_status || `Processing${progress ? ` - ${progress}%` : '...'}`);
       }
     } catch (err: any) {
       console.error('Error polling job status:', err);
@@ -196,7 +190,6 @@ function App() {
       const errorMsg = err.response?.data?.detail || errorMessage || 'Failed to check job status';
       setError(`Error: ${errorMsg}`);
       setStatusEmoji('❌');
-      setOpenAiStatus('Failed to check job status');
       
       if (pollingInterval.current) {
         clearInterval(pollingInterval.current);
@@ -218,9 +211,9 @@ function App() {
     setIsLoading(true);
     setError(null);
     setStatusEmoji('🔄');
-    setOpenAiStatus('Sending request to OpenAI...');
     
     const initialJob: VideoJob = {
+      openAiStatus: 'Sending request to OpenAI...',
       id: '',
       status: 'pending',
       prompt: values.prompt,
@@ -247,8 +240,11 @@ function App() {
       });
 
       if (response.data && response.data.id) {
-        setOpenAiStatus('Request received. Processing video generation...');
-        startJobPolling(response.data.id, initialJob);
+        const jobWithStatus = {
+          ...initialJob,
+          openAiStatus: 'Request received. Processing video generation...'
+        };
+        startJobPolling(response.data.id, jobWithStatus);
       } else {
         throw new Error('No job ID received in response');
       }
@@ -257,8 +253,8 @@ function App() {
       const errorMsg = err.response?.data?.detail || err.message || 'Failed to start video generation';
       setError(errorMsg);
       setStatusEmoji('❌');
-      setOpenAiStatus(`Error: ${errorMsg}`);
       setIsLoading(false);
+      setJob(prev => prev ? { ...prev, openAiStatus: `Error: ${errorMsg}` } : null);
     }
   };
 
