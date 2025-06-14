@@ -53,29 +53,44 @@ jobs:
           # Create build directory structure
           mkdir -p build
           
-          # Copy only necessary files from dist
-          cp -r dist/* build/
+          # Copy only essential files from dist
+          cp dist/index.html build/
+          cp dist/404.html build/ 2>/dev/null || true
           
-          # Ensure staticwebapp.config.json exists
-          if [ ! -f staticwebapp.config.json ]; then
-            echo '{"navigationFallback": {"rewrite": "/index.html","exclude": ["/assets/*","/*.css","/*.js","/*.json"]}}' > staticwebapp.config.json
-          fi
+          # Create assets directory and copy only necessary assets
+          mkdir -p build/assets
           
-          # Copy configuration files
-          cp staticwebapp.config.json build/
+          # Copy only the main CSS and JS files (adjust patterns as needed)
+          cp dist/assets/*.css build/assets/ 2>/dev/null || true
+          cp dist/assets/*.js build/assets/ 2>/dev/null || true
+          
+          # Copy other essential assets (images, fonts, etc.)
+          mkdir -p build/assets/images
+          cp -r dist/assets/images/* build/assets/images/ 2>/dev/null || true
+          
+          # Create minimal staticwebapp.config.json
+          echo '{
+            "navigationFallback": {
+              "rewrite": "/index.html",
+              "exclude": ["/assets/*", "/*.css", "/*.js", "/*.json"]
+            },
+            "mimeTypes": {
+              ".json": "text/json"
+            }
+          }' > build/staticwebapp.config.json
           
           # Create _redirects file for SPA routing
           echo '/*    /index.html   200' > build/_redirects
           
-          # Clean up any unnecessary files
-          find build -name '*.map' -delete
-          
-          # List files for verification
-          echo "=== Files in build/ ==="
+          # Verify build directory contents
+          echo "=== Build directory structure ==="
           find build -type f | sort
           
-          echo "\n=== Total file count ==="
+          echo "\n=== File count ==="
           find build -type f | wc -l
+          
+          echo "\n=== Build directory size ==="
+          du -sh build/*
           
       - name: Deploy to Azure Static Web App
         uses: Azure/static-web-apps-deploy@v1
