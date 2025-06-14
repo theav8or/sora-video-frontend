@@ -1,3 +1,4 @@
+# Azure Static Web Apps CI/CD - Deployment Trigger
 name: Azure Static Web Apps CI/CD
 
 on:
