@@ -195,18 +195,20 @@ function App() {
         // Only show error if we've exceeded max retries
         if (retryCount.current[jobId] >= MAX_RETRIES) {
           console.warn(`Job ${jobId} not found after ${MAX_RETRIES} attempts`);
+          // Keep the job in processing state but update the status message
+          setJob(prev => prev ? { 
+            ...prev,
+            status: 'processing',
+            openAiStatus: 'Finalizing video... (this may take a few more moments)'
+          } : null);
+          
+          // Continue polling with a longer delay
           if (pollingInterval.current) {
             clearInterval(pollingInterval.current);
-            pollingInterval.current = null;
+            pollingInterval.current = setInterval(() => checkJobStatus(jobId), 5000);
           }
-          setJob(prev => prev ? { 
-            ...prev, 
-            status: 'not_found',
-            error: 'Job not found. It may have expired or been removed.' 
-          } : null);
-          setIsLoading(false);
         } else {
-          // Schedule a retry
+          // Schedule a retry with the same interval
           console.log(`Job ${jobId} not found, retrying (${retryCount.current[jobId]}/${MAX_RETRIES})...`);
           setTimeout(() => checkJobStatus(jobId), RETRY_DELAY);
         }
