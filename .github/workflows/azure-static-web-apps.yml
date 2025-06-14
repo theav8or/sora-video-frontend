@@ -48,48 +48,89 @@ jobs:
           # Verify build output
           ls -la dist/
           
-      - name: Prepare build directory
+      - name: Create minimal build
         run: |
-          # Create build directory structure
+          # Create a fresh build directory
+          rm -rf build
           mkdir -p build
           
-          # Copy only essential files from dist
-          cp dist/index.html build/
-          cp dist/404.html build/ 2>/dev/null || true
+          # Create a minimal index.html with inline CSS and JS
+          echo '<!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>Video Generation App</title>
+            <style>
+              body { font-family: Arial, sans-serif; text-align: center; padding: 2rem; }
+              .loading { font-size: 1.5rem; margin-top: 2rem; }
+            </style>
+          </head>
+          <body>
+            <div id="root">
+              <h1>Video Generation App</h1>
+              <p class="loading">Loading application...</p>
+            </div>
+            <script>
+              // Minimal error handling for failed asset loading
+              window.addEventListener("error", (e) => {
+                console.error("Error loading resource:", e);
+                const root = document.getElementById('root');
+                if (root) {
+                  root.innerHTML = `
+                    <h1>Application Error</h1>
+                    <p>Failed to load application resources. Please refresh the page or try again later.</p>
+                    <p>${e.message}</p>
+                  `;
+                }
+              }, true);
+            </script>
+            <!-- Load main JS file -->
+            <script type="module" crossorigin src="/assets/index.js"></script>
+          </body>
+          </html>' > build/index.html
           
-          # Create assets directory and copy only necessary assets
+          # Create assets directory
           mkdir -p build/assets
           
-          # Copy only the main CSS and JS files (adjust patterns as needed)
-          cp dist/assets/*.css build/assets/ 2>/dev/null || true
-          cp dist/assets/*.js build/assets/ 2>/dev/null || true
+          # Copy only the main JS file (assuming it's the main entry point)
+          MAIN_JS=$(find dist/assets -name 'main-*.js' | head -n 1)
+          if [ -f "$MAIN_JS" ]; then
+            cp "$MAIN_JS" build/assets/index.js
+          else
+            echo "Error: Could not find main JS file in dist/assets/"
+            exit 1
+          fi
           
-          # Copy other essential assets (images, fonts, etc.)
-          mkdir -p build/assets/images
-          cp -r dist/assets/images/* build/assets/images/ 2>/dev/null || true
+          # Copy CSS if it exists
+          find dist/assets -name '*.css' -exec cp {} build/assets/ \; 2>/dev/null || true
           
           # Create minimal staticwebapp.config.json
           echo '{
             "navigationFallback": {
               "rewrite": "/index.html",
-              "exclude": ["/assets/*", "/*.css", "/*.js", "/*.json"]
+              "exclude": ["/assets/*"]
             },
             "mimeTypes": {
-              ".json": "text/json"
+              ".js": "text/javascript",
+              ".css": "text/css"
             }
           }' > build/staticwebapp.config.json
           
           # Create _redirects file for SPA routing
           echo '/*    /index.html   200' > build/_redirects
           
-          # Verify build directory contents
-          echo "=== Build directory structure ==="
+          # Create a simple 404 page
+          cp build/index.html build/404.html
+          
+          # Verify final build contents
+          echo "=== Final build structure ==="
           find build -type f | sort
           
-          echo "\n=== File count ==="
+          echo "\n=== Total file count ==="
           find build -type f | wc -l
           
-          echo "\n=== Build directory size ==="
+          echo "\n=== Build size ==="
           du -sh build/*
           
       - name: Deploy to Azure Static Web App

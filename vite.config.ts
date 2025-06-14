@@ -25,48 +25,45 @@ export default defineConfig(() => ({
     outDir: 'dist',
     assetsDir: 'assets',
     emptyOutDir: true,
-    sourcemap: false,  // Disable source maps to reduce file count
-    minify: 'terser',  // Use terser for better minification
-    cssCodeSplit: true,
+    // Disable all source maps
+    sourcemap: false,
+    // Use esbuild for faster, minimal output
+    minify: 'esbuild',
+    // Disable CSS code splitting
+    cssCodeSplit: false,
+    // Don't report compressed size
     reportCompressedSize: false,
-    chunkSizeWarningLimit: 1000,  // Increase chunk size warning limit
-    terserOptions: {
-      compress: {
-        drop_console: true,  // Remove console logs in production
-        drop_debugger: true, // Remove debugger statements
-      },
-      format: {
-        comments: false, // Remove all comments
-      },
-    },
+    // Disable chunk size warnings
+    chunkSizeWarningLimit: 2000,
+    // Disable brotli compression
+    brotliSize: false,
+    // Configure rollup for minimal output
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html'),
       },
       output: {
-        manualChunks: (id) => {
-          // Group all node_modules into a single vendor chunk
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
-          // Group assets by type
-          if (id.endsWith('.css')) {
-            return 'styles';
-          }
-        },
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: (assetInfo) => {
-          const info = assetInfo.name.split('.');
-          const ext = info[info.length - 1];
-          if (/\.(png|jpe?g|svg|gif|webp|avif)$/i.test(assetInfo.name)) {
-            return `assets/images/[name]-[hash][extname]`;
-          }
-          if (/\.(woff|woff2|eot|ttf|otf)$/i.test(assetInfo.name)) {
-            return `assets/fonts/[name]-[hash][extname]`;
-          }
-          return `assets/[name]-[hash][extname]`;
-        },
+        // Single bundle with no hashing for simpler deployment
+        entryFileNames: 'assets/main.js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name][extname]',
+        // Single bundle for all code
+        manualChunks: () => 'main',
+      },
+    },
+    // Aggressive optimizations
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn'],
+        passes: 2
+      },
+      format: {
+        comments: false,
+      },
+      mangle: {
+        toplevel: true,
       },
     },
   },
