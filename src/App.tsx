@@ -136,6 +136,11 @@ function App() {
     }, 2000);
   };
 
+  // Track retry attempts for each job
+  const retryCount = useRef<Record<string, number>>({});
+  const MAX_RETRIES = 5;
+  const RETRY_DELAY = 2000; // 2 seconds
+
   const checkJobStatus = async (jobId: string) => {
     try {
       const response = await apiClient.get(`/api/job/${jobId}`);
@@ -143,7 +148,8 @@ function App() {
 
       const { status, result, error, progress, openai_status, openai_response } = responseData;
       
-      // openai_status is already included in the job state update below
+      // Reset retry count on successful response
+      retryCount.current[jobId] = 0;
       
       setJob((prev) => {
         if (!prev) return null;
@@ -180,15 +186,37 @@ function App() {
         // Status updates are handled by the state updates
         setStatusEmoji('⚙️');
       }
-    } catch (err: any) {
-      console.error('Error polling job status:', err);
-      const errorMessage = err.message || 'Unknown error';
-      const errorMsg = err.response?.data?.detail || errorMessage || 'Failed to check job status';
-      setError(`Error: ${errorMsg}`);
-      setStatusEmoji('❌');
-      
-      if (pollingInterval.current) {
-        clearInterval(pollingInterval.current);
+    } catch (error: any) {
+      // Handle 404 errors specifically
+      if (error.response?.status === 404) {
+        // Increment retry count
+        retryCount.current[jobId] = (retryCount.current[jobId] || 0) + 1;
+        
+        // Only show error if we've exceeded max retries
+        if (retryCount.current[jobId] >= MAX_RETRIES) {
+          console.warn(`Job ${jobId} not found after ${MAX_RETRIES} attempts`);
+          if (pollingInterval.current) {
+            clearInterval(pollingInterval.current);
+            pollingInterval.current = null;
+          }
+          setJob(prev => prev ? { 
+            ...prev, 
+            status: 'not_found',
+            error: 'Job not found. It may have expired or been removed.' 
+          } : null);
+          setIsLoading(false);
+        } else {
+          // Schedule a retry
+          console.log(`Job ${jobId} not found, retrying (${retryCount.current[jobId]}/${MAX_RETRIES})...`);
+          setTimeout(() => checkJobStatus(jobId), RETRY_DELAY);
+        }
+      } else {
+        // Handle other errors
+        console.error('Error polling job status:', error);
+        setJob(prev => prev ? { 
+          ...prev, 
+          error: error.message || 'Failed to check job status' 
+        } : null);
         pollingInterval.current = null;
       }
       setIsLoading(false);
@@ -344,9 +372,24 @@ function App() {
               <Box mt="md">
                 <Text size="sm" mb="xs">
                   Status: {statusEmoji} {job.status}
+                  {job.id && (
+                    <Text size="xs" c="dimmed" mt={4}>
+                      Job ID: {job.id}
+                    </Text>
+                  )}
+                  {job.result?.video_id && (
+                    <Text size="xs" c="dimmed" mt={2}>
+                      Sora ID: {job.result.video_id}
+                    </Text>
+                  )}
                 </Text>
                 {job.progress !== undefined && (
                   <Progress value={job.progress || 0} size="sm" mt="sm" />
+                )}
+                {job.openAiStatus && (
+                  <Text size="xs" c="dimmed" mt={4}>
+                    {job.openAiStatus}
+                  </Text>
                 )}
               </Box>
             )}
