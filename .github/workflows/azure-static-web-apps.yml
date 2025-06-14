@@ -32,6 +32,8 @@ jobs:
           node -v
           npm -v
           npm ci --legacy-peer-deps
+          # Install Terser explicitly as it's needed for production builds
+          npm install --save-dev terser
         
       - name: Build application
         run: |
