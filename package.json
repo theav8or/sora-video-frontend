@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "build": "tsc -b && vite build --mode production",
+    "build:analyze": "cross-env ANALYZE=true vite build --mode production",
+    "lint": "eslint . --ext .ts,.tsx",
+    "preview": "vite preview",
+    "preview:build": "vite preview --host"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

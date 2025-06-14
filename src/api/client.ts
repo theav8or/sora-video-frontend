@@ -1,11 +1,16 @@
 import axios from 'axios';
 
+// Get base URL from environment variables
+const baseURL = import.meta.env.VITE_APP_URL || 'https://sora-wafl.azurewebsites.net';
+
 // Create axios instance with default config
 const apiClient = axios.create({
-  baseURL: 'https://sora-wafl.azurewebsites.net',
+  baseURL,
   withCredentials: false,  // Disable credentials for CORS
   timeout: 30000,  // 30 second timeout
 });
+
+console.log('API Client initialized with baseURL:', baseURL);
 
 // Request interceptor to add headers
 apiClient.interceptors.request.use(

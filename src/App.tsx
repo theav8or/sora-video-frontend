@@ -17,7 +17,7 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconRocket, IconDownload } from '@tabler/icons-react';
-import axios from 'axios';
+import apiClient from './api/client';
 import '@mantine/core/styles.css';
 import './App.css';
 
@@ -67,11 +67,7 @@ interface FormValues {
   resolution: string;
 }
 
-// Create an axios instance with default config
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
-  timeout: 30000,
-});
+// API client is now imported from './api/client'
 
 function App() {
   const [job, setJob] = useState<VideoJob | null>(null);

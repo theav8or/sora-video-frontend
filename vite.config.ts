@@ -1,24 +1,40 @@
-// @ts-nocheck
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import { defineConfig, loadEnv } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Get the directory name in ES module
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// https://vite.dev/config/
-export default defineConfig(() => ({
-  base: './', // Use relative paths for assets
-  plugins: [react()],
-  // Ensure Vite serves the SPA for all routes in development
-  appType: 'spa',
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
+// https://vitejs.dev/config/
+export default defineConfig(({ mode }) => {
+  // Load env file based on `mode` in the current directory.
+  const env = loadEnv(mode, process.cwd(), '');
+  
+  return {
+    // Use relative paths for assets in production, absolute in development
+    base: mode === 'development' ? '/' : './',
+    
+    plugins: [react()],
+    
+    // Ensure Vite serves the SPA for all routes in development
+    appType: 'spa',
+    
+    // Define global constants
+    define: {
+      'import.meta.env.VITE_APP_URL': JSON.stringify(env.VITE_APP_URL || 'https://sora-wafl.azurewebsites.net'),
+      'import.meta.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL || '/api'),
+    },
+    
+    // Development server configuration
+    server: {
+      port: 5173,
+      strictPort: true,
+      proxy: {
+        '/api': {
+          target: 'http://localhost:8000',
+          changeOrigin: true,
         secure: false,
       },
     },
