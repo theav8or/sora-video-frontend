@@ -2,9 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with default config
 const apiClient = axios.create({
-  baseURL: import.meta.env.DEV 
-    ? 'http://localhost:8000'  // Using port 8000 for development
-    : 'https://sora-wafl.azurewebsites.net',  // Production backend URL
+  baseURL: 'https://sora-wafl.azurewebsites.net',
   withCredentials: false,  // Disable credentials for CORS
   timeout: 30000,  // 30 second timeout
 });
