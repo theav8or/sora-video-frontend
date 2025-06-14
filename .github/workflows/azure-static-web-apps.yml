@@ -30,12 +30,18 @@ jobs:
         run: npm ci --legacy-peer-deps
         
       - name: Build application
-        run: npm run build
-        
-      - name: Create fallback index.html for SPA routing
         run: |
-          cp dist/index.html dist/404.html
-          echo '/* /index.html 200' > dist/_redirects
+          VITE_BASE_PATH=./ npm run build
+          
+      - name: Configure Azure Static Web Apps
+        run: |
+          cd dist
+          # Create a fallback for SPA routing
+          cp index.html 404.html
+          # Create a staticwebapp.config.json for Azure
+          echo '{"routes": [{"route": "/*","serve": "/index.html","statusCode": 200}]}' > staticwebapp.config.json
+          # Create a _redirects file for Netlify-style redirects
+          echo '/*    /index.html   200' > _redirects
           
       - name: Deploy to Azure Static Web App
         uses: Azure/static-web-apps-deploy@v1
@@ -45,4 +51,4 @@ jobs:
           action: 'upload'
           app_location: '/'
           output_location: 'dist'
-          skip_app_build: false
+          skip_app_build: true
