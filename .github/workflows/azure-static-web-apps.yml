@@ -59,13 +59,24 @@ jobs:
           echo "\n=== staticwebapp.config.json ==="
           cat staticwebapp.config.json
           
+      - name: Create build directory for Azure
+        run: |
+          # Create a build directory that Azure expects
+          mkdir -p build
+          # Copy all files from dist to build
+          cp -r dist/* build/
+          # Copy staticwebapp.config.json to build directory
+          cp staticwebapp.config.json build/
+          # List files for verification
+          echo "=== Files in build/ ==="
+          ls -la build
+          
       - name: Deploy to Azure Static Web App
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: 33d6a8db16d582c2e8b324002c8f494c8b8e80929511aaf085bcf4daa51e5b7f06-ac285d03-4a3a-43ec-bed2-2e295ab3752d00f28090e98e210f
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: 'upload'
-          app_location: '/'
-          output_location: 'dist'
-          app_build_command: 'npm run build'
-          skip_app_build: true
+          app_location: '/'  # Source directory for the application code
+          output_location: 'build'  # Azure expects the built files in a 'build' directory
+          skip_app_build: true  # We're handling the build manually
