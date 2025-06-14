@@ -25,11 +25,24 @@ export default defineConfig(() => ({
     outDir: 'dist',
     assetsDir: 'assets',
     emptyOutDir: true,
+    sourcemap: false,  // Disable source maps to reduce file count
+    minify: 'terser',  // Use terser for better minification
+    terserOptions: {
+      compress: {
+        drop_console: true,  // Remove console logs in production
+      },
+    },
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html'),
       },
       output: {
+        manualChunks: (id) => {
+          // Group vendor modules into a single chunk
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
+        },
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',

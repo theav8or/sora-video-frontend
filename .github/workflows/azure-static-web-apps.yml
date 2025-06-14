@@ -61,15 +61,29 @@ jobs:
           
       - name: Create build directory for Azure
         run: |
-          # Create a build directory that Azure expects
-          mkdir -p build
-          # Copy all files from dist to build
-          cp -r dist/* build/
-          # Copy staticwebapp.config.json to build directory
+          # Create build directory structure
+          mkdir -p build/assets
+          
+          # Copy only necessary files from dist
+          cp -r dist/index.html build/
+          cp dist/404.html build/ 2>/dev/null || true
+          cp -r dist/assets/* build/assets/ 2>/dev/null || true
+          
+          # Copy configuration files
           cp staticwebapp.config.json build/
+          
+          # Create _redirects file for SPA routing
+          echo '/*    /index.html   200' > build/_redirects
+          
+          # Clean up any unnecessary files
+          find build -name '*.map' -delete
+          
           # List files for verification
           echo "=== Files in build/ ==="
-          ls -la build
+          find build -type f | sort
+          
+          echo "\n=== Total file count ==="
+          find build -type f | wc -l
           
       - name: Deploy to Azure Static Web App
         uses: Azure/static-web-apps-deploy@v1
