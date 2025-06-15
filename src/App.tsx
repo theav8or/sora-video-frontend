@@ -13,7 +13,10 @@ import {
   Box,
   Progress,
   Alert,
-  Modal
+  Modal,
+  Overlay,
+  Loader,
+  Center
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconRocket, IconDownload } from '@tabler/icons-react';
@@ -306,7 +309,64 @@ function App() {
   };
 
   return (
-    <Container size="lg" py="xl">
+    <Container size="lg" py="xl" style={{ position: 'relative' }}>
+      {/* Overlay that appears during video generation */}
+      {isLoading && (
+        <Overlay
+          color="#000"
+          backgroundOpacity={0.85}
+          blur={3}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 1000,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: '2rem',
+            color: 'white',
+            textAlign: 'center',
+          }}
+        >
+          <Loader size="xl" color="blue" mb="md" />
+          <Title order={2} mb="md">Generating Your Video</Title>
+          <Text size="lg" mb="md">This may take a few moments. Please don't close this page.</Text>
+          
+          {job?.openAiStatus && (
+            <Text size="md" mb="md" style={{ maxWidth: '600px' }}>
+              {job.openAiStatus}
+            </Text>
+          )}
+          
+          {job?.progress !== undefined && (
+            <Box style={{ width: '100%', maxWidth: '400px' }}>
+              <Progress
+                value={job.progress}
+                label={`${Math.round(job.progress)}%`}
+                size="lg"
+                radius="xl"
+                mb="md"
+                style={{ width: '100%' }}
+              />
+            </Box>
+          )}
+          
+          <Button 
+            variant="outline" 
+            color="gray" 
+            size="lg"
+            disabled
+            style={{ opacity: 0.7, cursor: 'not-allowed' }}
+          >
+            Please wait...
+          </Button>
+        </Overlay>
+      )}
+      
       <Title order={1} mb="xl" ta="center">
         Sora Video Generation
       </Title>
@@ -348,6 +408,7 @@ function App() {
                 leftSection={<IconRocket size={16} />}
                 loading={isLoading}
                 disabled={isLoading}
+                style={{ zIndex: isLoading ? 1001 : 'auto' }}
               >
                 Generate Video
               </Button>
