@@ -15,8 +15,7 @@ import {
   Alert,
   Modal,
   Overlay,
-  Loader,
-  Center
+  Loader
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconRocket, IconDownload } from '@tabler/icons-react';
@@ -79,6 +78,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [statusEmoji, setStatusEmoji] = useState('⏳');
   const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const pollingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const form = useForm<FormValues>({
@@ -174,6 +174,7 @@ function App() {
           pollingInterval.current = null;
         }
         setIsLoading(false);
+        setIsGenerating(false);
         setStatusEmoji('✅');
         setShowDownloadModal(true);
       } else if (status === 'failed') {
@@ -182,6 +183,7 @@ function App() {
           pollingInterval.current = null;
         }
         setIsLoading(false);
+        setIsGenerating(false);
         setStatusEmoji('❌');
         const errorMsg = error || 'Video generation failed';
         setError(errorMsg);
@@ -238,6 +240,7 @@ function App() {
 
   const handleSubmit = async (values: FormValues) => {
     setIsLoading(true);
+    setIsGenerating(true);
     setError(null);
     setStatusEmoji('🔄');
     
@@ -311,7 +314,7 @@ function App() {
   return (
     <Container size="lg" py="xl" style={{ position: 'relative' }}>
       {/* Overlay that appears during video generation */}
-      {isLoading && (
+      {(isLoading || isGenerating) && (
         <Overlay
           color="#000"
           backgroundOpacity={0.85}
@@ -344,14 +347,18 @@ function App() {
           
           {job?.progress !== undefined && (
             <Box style={{ width: '100%', maxWidth: '400px' }}>
+              <Box style={{ width: '100%' }}>
+              <Text size="sm" ta="center" mb="xs">
+                Progress: {Math.round(job.progress)}%
+              </Text>
               <Progress
                 value={job.progress}
-                label={`${Math.round(job.progress)}%`}
                 size="lg"
                 radius="xl"
                 mb="md"
                 style={{ width: '100%' }}
               />
+            </Box>
             </Box>
           )}
           
